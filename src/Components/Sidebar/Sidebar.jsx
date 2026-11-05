@@ -9,15 +9,15 @@ import music from '../../assets/music.png'
 import blogs from '../../assets/blogs.png'
 import news from '../../assets/news.png'
 import jack from '../../assets/jack.png'
-import simon from '../../assets/simon.png'
-import tom from '../../assets/tom.png'
-import megan from '../../assets/megan.png'
-import cameron from '../../assets/cameron.png'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useAuth } from '../../context/useAuth'
 
 const Sidebar = ({ sidebar, category, setCategory }) => {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const subscriptions = user?.subscriptions || [];
 
   const handleCategoryClick = (catId) => {
     if (setCategory) {
@@ -44,14 +44,6 @@ const Sidebar = ({ sidebar, category, setCategory }) => {
     { id: 25, label: 'News', icon: news },
   ];
 
-  const subscriptions = [
-    { name: 'PewDiePie', icon: jack },
-    { name: 'MrBeast', icon: simon },
-    { name: 'Justin Bieber', icon: tom },
-    { name: '5-Minute Crafts', icon: megan },
-    { name: 'Nas Daily', icon: cameron },
-  ];
-
   return (
     <aside className={`sidebar ${sidebar ? "" : "small-sidebar"}`} aria-label="Sidebar navigation">
       <div className="shortcut-links">
@@ -74,20 +66,33 @@ const Sidebar = ({ sidebar, category, setCategory }) => {
 
       <div className="subscribed-list">
         <h3>Subscribed</h3>
-        {subscriptions.map((sub) => (
-          <div
-            key={sub.name}
-            className="side-link channel-link"
-            onClick={() => handleChannelClick(sub.name)}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => e.key === 'Enter' && handleChannelClick(sub.name)}
-            title={sub.name}
-          >
-            <img src={sub.icon} alt={sub.name} />
-            <p>{sub.name}</p>
+        {subscriptions.length === 0 ? (
+          <div className="empty-sub-notice">
+            <p>No subscriptions yet</p>
+            <span>Subscribe to channels while watching to see them here.</span>
           </div>
-        ))}
+        ) : (
+          subscriptions.map((sub) => (
+            <div
+              key={sub.channelId || sub.title}
+              className="side-link channel-link"
+              onClick={() => handleChannelClick(sub.title)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && handleChannelClick(sub.title)}
+              title={sub.title}
+            >
+              <img
+                src={sub.thumbnail || jack}
+                alt={sub.title}
+                onError={(e) => {
+                  e.target.src = jack;
+                }}
+              />
+              <p>{sub.title}</p>
+            </div>
+          ))
+        )}
       </div>
     </aside>
   );

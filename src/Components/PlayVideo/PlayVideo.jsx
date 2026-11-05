@@ -13,8 +13,13 @@ import {
 } from "../../data";
 import { useParams } from "react-router-dom";
 import moment from "moment";
+import { useAuth } from "../../context/useAuth";
 
 const PlayVideo = ({ videoId: propVideoId }) => {
+  const { user, isSubscribed, toggleSubscribe } = useAuth();
+  const currentUserName = user?.name || "You";
+  const currentUserAvatar = user?.avatar || userProfile;
+
   const params = useParams();
   const videoId = propVideoId || params.videoId;
 
@@ -24,7 +29,6 @@ const PlayVideo = ({ videoId: propVideoId }) => {
   const [isLiked, setIsLiked] = useState(false);
   const [isDisliked, setIsDisliked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
-  const [isSubscribed, setIsSubscribed] = useState(false);
   const [showFullDesc, setShowFullDesc] = useState(false);
   const [newCommentText, setNewCommentText] = useState("");
   const [toastMessage, setToastMessage] = useState("");
@@ -97,9 +101,26 @@ const PlayVideo = ({ videoId: propVideoId }) => {
     showToast(!isSaved ? "Saved to Watch Later" : "Removed from Watch Later");
   };
 
+  const channelId = channelData?.id || apiData?.snippet?.channelId || "default";
+  const channelTitle = apiData?.snippet?.channelTitle || channelData?.snippet?.title || "Creator";
+  const channelThumbnail =
+    channelData?.snippet?.thumbnails?.default?.url ||
+    channelData?.snippet?.thumbnails?.medium?.url ||
+    currentUserAvatar;
+
+  const userIsSubscribed = isSubscribed(channelId, channelTitle);
+
   const handleSubscribe = () => {
-    setIsSubscribed((prev) => !prev);
-    showToast(!isSubscribed ? "Subscribed to channel!" : "Unsubscribed");
+    const subscribed = toggleSubscribe({
+      channelId,
+      title: channelTitle,
+      thumbnail: channelThumbnail,
+    });
+    if (subscribed) {
+      showToast(`Subscribed to ${channelTitle}!`);
+    } else {
+      showToast(`Unsubscribed from ${channelTitle}`);
+    }
   };
 
   const handleCommentSubmit = (e) => {
@@ -111,8 +132,8 @@ const PlayVideo = ({ videoId: propVideoId }) => {
       snippet: {
         topLevelComment: {
           snippet: {
-            authorDisplayName: "You",
-            authorProfileImageUrl: userProfile,
+            authorDisplayName: currentUserName,
+            authorProfileImageUrl: currentUserAvatar,
             textDisplay: newCommentText.trim(),
             likeCount: 0,
             publishedAt: new Date().toISOString(),
@@ -130,7 +151,7 @@ const PlayVideo = ({ videoId: propVideoId }) => {
   const displayedLikes = isLiked ? rawLikes + 1 : rawLikes;
 
   const rawSubs = Number(channelData?.statistics?.subscriberCount || 100000);
-  const displayedSubs = isSubscribed ? rawSubs + 1 : rawSubs;
+  const displayedSubs = userIsSubscribed ? rawSubs + 1 : rawSubs;
 
   const description = apiData?.snippet?.description || "";
   const shouldTruncate = description.length > 250;
@@ -220,10 +241,10 @@ const PlayVideo = ({ videoId: propVideoId }) => {
           <span>{value_converter(displayedSubs)} Subscribers</span>
         </div>
         <button
-          className={`subscribe-btn ${isSubscribed ? "subscribed" : ""}`}
+          className={`subscribe-btn ${userIsSubscribed ? "subscribed" : ""}`}
           onClick={handleSubscribe}
         >
-          {isSubscribed ? "Subscribed" : "Subscribe"}
+          {userIsSubscribed ? "Subscribed" : "Subscribe"}
         </button>
       </div>
 
@@ -251,7 +272,7 @@ const PlayVideo = ({ videoId: propVideoId }) => {
 
         {/* Add comment box */}
         <form className="add-comment-form" onSubmit={handleCommentSubmit}>
-          <img src={userProfile} alt="Your avatar" className="user-comment-avatar" />
+          <img src={currentUserAvatar} alt={currentUserName} className="user-comment-avatar" />
           <div className="comment-input-box">
             <input
               type="text"

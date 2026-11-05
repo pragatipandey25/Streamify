@@ -1,23 +1,22 @@
 import { useState } from "react";
 import "./Navbar.css";
 import menu_icon from "../../assets/menu.png";
-import logo from "../../assets/Streamify.png";
 import search_icon from "../../assets/search.png";
 import upload_icon from "../../assets/upload.png";
 import notification_icon from "../../assets/notification.png";
-import profile_icon from "../../assets/jack.png";
 import voice_icon from "../../assets/voice-search.png";
+import user_profile from "../../assets/user_profile.jpg";
 import { Link, useNavigate } from "react-router-dom";
-import { getApiKey, setApiKey } from "../../data";
+import { useAuth } from "../../context/useAuth";
+import Logo from "../Logo/Logo";
 
 const Navbar = ({ setSidebar }) => {
+  const { user, logout } = useAuth();
+
   const [searchQuery, setSearchQuery] = useState("");
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [showKeyModal, setShowKeyModal] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-
-  const [customKey, setCustomKey] = useState(getApiKey());
   const [videoInputUrl, setVideoInputUrl] = useState("");
 
   const navigate = useNavigate();
@@ -36,7 +35,6 @@ const Navbar = ({ setSidebar }) => {
     }
   };
 
-  // Voice Search using Web Speech API
   const handleVoiceSearch = () => {
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -65,7 +63,6 @@ const Navbar = ({ setSidebar }) => {
     let videoId = videoInputUrl.trim();
     if (!videoId) return;
 
-    // Check if it's a full YouTube URL
     try {
       if (videoId.includes("youtube.com/watch")) {
         const urlParams = new URL(videoId).searchParams;
@@ -74,7 +71,7 @@ const Navbar = ({ setSidebar }) => {
         videoId = videoId.split("youtu.be/")[1].split("?")[0];
       }
     } catch {
-      // not a valid URL, use raw string
+      // use raw input
     }
 
     setShowUploadModal(false);
@@ -82,12 +79,14 @@ const Navbar = ({ setSidebar }) => {
     navigate(`/video/0/${videoId}`);
   };
 
-  const handleSaveApiKey = (e) => {
-    e.preventDefault();
-    setApiKey(customKey);
-    setShowKeyModal(false);
-    window.location.reload();
+  const handleLogout = () => {
+    setShowProfileMenu(false);
+    logout();
   };
+
+  const userAvatar = user?.avatar || user_profile;
+  const userName = user?.name || "Streamify User";
+  const userEmail = user?.email || "user@streamify.app";
 
   return (
     <>
@@ -105,7 +104,7 @@ const Navbar = ({ setSidebar }) => {
           />
 
           <Link to="/" aria-label="Streamify Home">
-            <img className="logo" src={logo} alt="Streamify Logo" />
+            <Logo size="medium" />
           </Link>
         </div>
 
@@ -160,16 +159,6 @@ const Navbar = ({ setSidebar }) => {
             <img className="nav-icon" src={upload_icon} alt="Custom Video" />
           </button>
 
-          <button
-            type="button"
-            className="nav-btn key-btn"
-            onClick={() => setShowKeyModal(true)}
-            title="YouTube API Key Settings"
-            aria-label="Configure API Key"
-          >
-            <span className="api-badge">API</span>
-          </button>
-
           <div className="dropdown-wrapper">
             <button
               type="button"
@@ -196,12 +185,12 @@ const Navbar = ({ setSidebar }) => {
                 </div>
                 <div className="dropdown-list">
                   <div className="notif-item">
-                    <p>🎉 Welcome to Streamify! Discover trending videos anytime.</p>
+                    <p>🎉 Welcome back, {userName}! Trending videos await you.</p>
                     <span>Just now</span>
                   </div>
                   <div className="notif-item">
-                    <p>🔥 MrBeast just dropped a new video!</p>
-                    <span>2 hours ago</span>
+                    <p>🔥 New trending music and creator uploads are live!</p>
+                    <span>Today</span>
                   </div>
                 </div>
               </div>
@@ -211,35 +200,27 @@ const Navbar = ({ setSidebar }) => {
           <div className="dropdown-wrapper">
             <img
               className="profile-icon"
-              src={profile_icon}
-              alt="Your profile"
+              src={userAvatar}
+              alt={userName}
               onClick={() => {
                 setShowProfileMenu((prev) => !prev);
                 setShowNotifications(false);
               }}
               role="button"
               tabIndex={0}
+              title={`Signed in as ${userName}`}
             />
 
             {showProfileMenu && (
               <div className="dropdown-panel profile-panel">
                 <div className="profile-header">
-                  <img src={profile_icon} alt="Avatar" />
+                  <img src={userAvatar} alt={userName} />
                   <div>
-                    <strong>Streamify Explorer</strong>
-                    <span>user@streamify.app</span>
+                    <strong>{userName}</strong>
+                    <span>{userEmail}</span>
                   </div>
                 </div>
                 <hr />
-                <button
-                  className="dropdown-action"
-                  onClick={() => {
-                    setShowProfileMenu(false);
-                    setShowKeyModal(true);
-                  }}
-                >
-                  ⚙️ API Key Settings
-                </button>
                 <button
                   className="dropdown-action"
                   onClick={() => {
@@ -251,10 +232,10 @@ const Navbar = ({ setSidebar }) => {
                 </button>
                 <hr />
                 <button
-                  className="dropdown-action"
-                  onClick={() => setShowProfileMenu(false)}
+                  className="dropdown-action logout-action"
+                  onClick={handleLogout}
                 >
-                  🚪 Close
+                  🚪 Sign Out
                 </button>
               </div>
             )}
@@ -297,53 +278,6 @@ const Navbar = ({ setSidebar }) => {
                 </button>
                 <button type="submit" className="modal-btn-primary">
                   Watch Video
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* API Key Modal */}
-      {showKeyModal && (
-        <div className="modal-backdrop" onClick={() => setShowKeyModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>YouTube API Configuration</h3>
-              <button
-                className="modal-close"
-                onClick={() => setShowKeyModal(false)}
-              >
-                &times;
-              </button>
-            </div>
-            <p className="modal-desc">
-              Streamify works automatically with live data and smart fallback cache. If you have your own Google Cloud YouTube Data API v3 key, you can enter it here:
-            </p>
-            <form onSubmit={handleSaveApiKey}>
-              <input
-                type="text"
-                className="modal-input"
-                placeholder="Enter YouTube API Key (starts with AIza...)"
-                value={customKey}
-                onChange={(e) => setCustomKey(e.target.value)}
-                autoFocus
-              />
-              <div className="modal-actions">
-                <button
-                  type="button"
-                  className="modal-btn-cancel"
-                  onClick={() => {
-                    setCustomKey("");
-                    setApiKey("");
-                    setShowKeyModal(false);
-                    window.location.reload();
-                  }}
-                >
-                  Reset to Default
-                </button>
-                <button type="submit" className="modal-btn-primary">
-                  Save & Reload
                 </button>
               </div>
             </form>
