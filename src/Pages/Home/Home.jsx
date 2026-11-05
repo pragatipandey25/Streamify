@@ -1,7 +1,7 @@
-import React, { useState } from 'react'
-import './Home.css'
-import Sidebar from '../../Components/Sidebar/Sidebar'
-import Feed from '../../Components/Feed/Feed'
+import { useState } from 'react';
+import './Home.css';
+import Sidebar from '../../Components/Sidebar/Sidebar';
+import Feed from '../../Components/Feed/Feed';
 
 const Home = ({ sidebar }) => {
   const [category, setCategory] = useState(0);
@@ -12,7 +12,7 @@ const Home = ({ sidebar }) => {
         <Feed category={category} />
       </div>
     </>
-  )
-}
+  );
+};
 
-export default Home
+export default Home;

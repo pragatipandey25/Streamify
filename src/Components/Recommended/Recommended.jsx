@@ -1,53 +1,76 @@
-import React, { useEffect, useState } from 'react'
-import './Recommended.css'
-import {API_KEY, value_converter} from '../../data'
-import {Link} from 'react-router-dom'
+import { useEffect, useState, useCallback } from "react";
+import "./Recommended.css";
+import { value_converter, fetchRecommendedVideos } from "../../data";
+import { Link } from "react-router-dom";
 
-const Recommended = ({ categoryId }) => {
-    const [apiData, setApiData] = useState([]);
-    const [error, setError] = useState(null); // State to manage errors
+const Recommended = ({ categoryId = 0 }) => {
+  const [apiData, setApiData] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-    const fetchData = async () => {
-        const relatedVideo_url = `https://youtube.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics&chart=mostPopular&maxResults=45&regionCode=US&videoCategoryId=${categoryId}&key=${API_KEY}`;
-        console.log('Fetching data from:', relatedVideo_url); // Log the URL being fetched
-        try {
-            const response = await fetch(relatedVideo_url);
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            const data = await response.json();
-            console.log('API Response:', data); // Log the API response
-            if (data.items) {
-                setApiData(data.items);
-            } else {
-                setError('No recommended videos found for this category.');
-            }
-        } catch (error) {
-            setError('Failed to fetch data: ' + error.message);
-        }
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const items = await fetchRecommendedVideos(categoryId);
+      setApiData(items || []);
+    } catch (err) {
+      console.error("Failed loading recommended videos:", err);
+    } finally {
+      setLoading(false);
     }
+  }, [categoryId]);
 
-    useEffect(() => {
-        fetchData();
-    }, [categoryId]) // Fetch data when categoryId changes
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
-    return (
-        <div className='recommended'>
-            {error && <div className="error-message">{error}</div>} {/* Display error message */}
-            {apiData.map((item, index) => {
-                return (
-                    <Link to={`/video/${item.snippet.categoryId}/${item.id}`} key={index} className="side-video-list">
-                        <img src={item.snippet.thumbnails.medium.url} alt="" />
-                        <div className="vid-info">
-                            <h4>{item.snippet.title}</h4>
-                            <p>{item.snippet.channelTitle}</p>
-                            <p>{value_converter(item.statistics.viewCount)} Views</p>
-                        </div>
-                    </Link>
-                )
-            })}
-        </div>
-    )
-}
+  return (
+    <div className="recommended">
+      <h3 className="recommended-heading">Up next</h3>
+      {loading ? (
+        Array.from({ length: 8 }).map((_, idx) => (
+          <div key={idx} className="side-video-list skeleton-side">
+            <div className="skeleton-side-thumb"></div>
+            <div className="skeleton-side-info">
+              <div className="skeleton-line" style={{ width: "90%" }}></div>
+              <div className="skeleton-line" style={{ width: "65%" }}></div>
+              <div className="skeleton-line" style={{ width: "40%" }}></div>
+            </div>
+          </div>
+        ))
+      ) : (
+        apiData.map((item, index) => {
+          const videoId = typeof item.id === "string" ? item.id : item.id?.videoId;
+          if (!videoId) return null;
+
+          const itemCat = item.snippet?.categoryId || categoryId || 0;
+          const thumbnail =
+            item.snippet?.thumbnails?.medium?.url ||
+            item.snippet?.thumbnails?.high?.url ||
+            item.snippet?.thumbnails?.default?.url ||
+            "";
+
+          return (
+            <Link
+              to={`/video/${itemCat}/${videoId}`}
+              key={videoId || index}
+              className="side-video-list"
+            >
+              <div className="side-thumb-wrap">
+                <img src={thumbnail} alt={item.snippet?.title || "Video"} loading="lazy" />
+              </div>
+              <div className="vid-info">
+                <h4>{item.snippet?.title || "Untitled Video"}</h4>
+                <p className="side-channel">{item.snippet?.channelTitle || "Creator"}</p>
+                <p className="side-views">
+                  {value_converter(item.statistics?.viewCount || 0)} Views
+                </p>
+              </div>
+            </Link>
+          );
+        })
+      )}
+    </div>
+  );
+};
 
 export default Recommended;

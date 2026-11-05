@@ -1,78 +1,108 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import "./Feed.css";
 import { Link } from "react-router-dom";
-import { API_KEY, value_converter } from "../../data";
+import { value_converter, fetchVideosByCategory, fetchSearchResults } from "../../data";
 import moment from "moment";
 
-const Feed = ({ category, searchQuery }) => {
+const Feed = ({ category = 0, searchQuery = "" }) => {
   const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isFallback, setIsFallback] = useState(false);
 
-  const fetchData = async () => {
-    let url;
-    if (searchQuery) {
-      // Use YouTube Search API when a search query is provided
-      url = `https://youtube.googleapis.com/youtube/v3/search?part=snippet&maxResults=50&q=${encodeURIComponent(searchQuery)}&key=${API_KEY}`;
-    } else {
-      url = `https://youtube.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics&chart=mostPopular&maxResults=50&regionCode=US&videoCategoryId=${category}&key=${API_KEY}`;
-    }
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
-      const data = await response.json();
-      if (data.items) {
-        setData(data.items);
+      let result;
+      if (searchQuery && searchQuery.trim()) {
+        result = await fetchSearchResults(searchQuery);
       } else {
-        setError("No data found for this category.");
+        result = await fetchVideosByCategory(category);
       }
-    } catch (error) {
-      setError("Failed to fetch data: " + error.message);
-    }
-  };
 
-  useEffect(() => {
-    fetchData();
+      if (result && Array.isArray(result.items)) {
+        setData(result.items);
+        setIsFallback(Boolean(result.isFallback));
+        if (result.items.length === 0) {
+          setError("No videos found. Try searching for something else.");
+        }
+      } else {
+        setError("Unable to load videos right now.");
+      }
+    } catch (err) {
+      setError("Failed to load videos: " + err.message);
+    } finally {
+      setLoading(false);
+    }
   }, [category, searchQuery]);
 
-  return (
-    <div className="feed">
-      {error && <div className="error-message">{error}</div>}
-      {data.map((item, index) => {
-        // Videos API: item.id is a string, item.statistics exists
-        // Search API: item.id is { videoId: "..." }, no statistics
-        const videoId =
-          typeof item.id === "string" ? item.id : item.id?.videoId;
-        const categoryId = item.snippet?.categoryId || 0;
-        const views = item.statistics?.viewCount;
-        const channelTitle = item.snippet?.channelTitle || "Unknown";
-        const title = item.snippet?.title || "Untitled";
-        const publishedAt = item.snippet?.publishedAt;
-        const thumbnail =
-          item.snippet?.thumbnails?.medium?.url ||
-          item.snippet?.thumbnails?.default?.url ||
-          "";
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
-        return (
-          <Link
-            to={`/video/${categoryId}/${videoId}`}
-            className="card"
-            key={videoId || index}
-          >
-            <img src={thumbnail} alt={title} />
-            <h2>{title}</h2>
-            <h3>{channelTitle}</h3>
-            {views && (
-              <p>
-                {value_converter(views)} Views &bull;{" "}
-                {moment(publishedAt).fromNow()}
-              </p>
-            )}
-            {!views && publishedAt && <p>{moment(publishedAt).fromNow()}</p>}
-          </Link>
-        );
-      })}
+  return (
+    <div className="feed-wrapper">
+      {isFallback && (
+        <div className="fallback-banner">
+          <span>ℹ️ Showing curated Streamify video showcase (YouTube API offline or quota limit).</span>
+        </div>
+      )}
+
+      {error && !loading && (
+        <div className="feed-error">
+          <p>{error}</p>
+          <button onClick={loadData} className="retry-btn">
+            Try Again
+          </button>
+        </div>
+      )}
+
+      <div className="feed">
+        {loading
+          ? Array.from({ length: 12 }).map((_, idx) => (
+              <div key={idx} className="card skeleton-card">
+                <div className="skeleton-thumb"></div>
+                <div className="skeleton-line title"></div>
+                <div className="skeleton-line channel"></div>
+                <div className="skeleton-line meta"></div>
+              </div>
+            ))
+          : data.map((item, index) => {
+              const videoId =
+                typeof item.id === "string" ? item.id : item.id?.videoId;
+              if (!videoId) return null;
+
+              const categoryId = item.snippet?.categoryId || 0;
+              const views = item.statistics?.viewCount;
+              const channelTitle = item.snippet?.channelTitle || "Streamify Creator";
+              const title = item.snippet?.title || "Untitled Video";
+              const publishedAt = item.snippet?.publishedAt;
+              const thumbnail =
+                item.snippet?.thumbnails?.medium?.url ||
+                item.snippet?.thumbnails?.high?.url ||
+                item.snippet?.thumbnails?.default?.url ||
+                "";
+
+              return (
+                <Link
+                  to={`/video/${categoryId}/${videoId}`}
+                  className="card"
+                  key={videoId || index}
+                >
+                  <div className="thumb-container">
+                    <img src={thumbnail} alt={title} loading="lazy" />
+                  </div>
+                  <h2>{title}</h2>
+                  <h3>{channelTitle}</h3>
+                  <p>
+                    {views !== undefined ? `${value_converter(views)} Views • ` : ""}
+                    {publishedAt ? moment(publishedAt).fromNow() : ""}
+                  </p>
+                </Link>
+              );
+            })}
+      </div>
     </div>
   );
 };

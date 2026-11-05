@@ -1,20 +1,20 @@
-.search-page {
-  padding: 24px 5%;
+.search-container {
+  min-height: calc(100vh - 64px);
 }
 
 .search-header {
-  margin-bottom: 24px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid #e0e0e0;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e5e5e5;
 }
 
 .search-header h2 {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 600;
   color: #0f0f0f;
 }
 
 .search-header h2 span {
   color: #065fd4;
-  font-weight: 400;
+  font-weight: 500;
 }
