@@ -69,16 +69,36 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const loginWithGoogle = () => {
-    // Check if there is an existing google account stored
-    const existing = registeredUsers.find((u) => u.email === "user@google.com");
+  const loginWithGoogle = (googleName, googleEmail, googleAvatar) => {
+    const email = (googleEmail || "").trim().toLowerCase();
+    if (!email) {
+      return { success: false, message: "Please provide a valid Google email address." };
+    }
+
+    const defaultName = email.split("@")[0]
+      .split(/[._-]/)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" ");
+
+    const name = (googleName || "").trim() || defaultName || "Google User";
+    const avatar = googleAvatar || user_profile;
+
+    const existing = registeredUsers.find((u) => u.email.toLowerCase() === email);
     const googleUser = {
-      name: "Google User",
-      email: "user@google.com",
-      avatar: user_profile,
+      name,
+      email,
+      avatar,
       isGoogle: true,
       subscriptions: existing?.subscriptions || [],
     };
+
+    if (!existing) {
+      setRegisteredUsers((prev) => [
+        ...prev,
+        { name, email, avatar, subscriptions: [], isGoogle: true },
+      ]);
+    }
+
     setUser(googleUser);
     return { success: true };
   };
