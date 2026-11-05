@@ -1,4 +1,4 @@
-.streamify-premium-logo {
+.streamify-logo {
   display: inline-flex;
   align-items: center;
   gap: 10px;
@@ -8,7 +8,7 @@
   transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
-.streamify-premium-logo:hover {
+.streamify-logo:hover {
   opacity: 0.92;
   transform: scale(1.02);
 }
@@ -28,64 +28,38 @@
 
 .logo-text-group {
   display: flex;
-  align-items: baseline;
-  gap: 6px;
+  align-items: center;
 }
 
 .brand-title {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  font-size: 20px;
+  font-size: 21px;
   font-weight: 800;
   letter-spacing: -0.6px;
   color: #0f0f0f;
   line-height: 1;
 }
 
-.premium-tag {
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 1.2px;
-  text-transform: uppercase;
-  color: #ffffff;
-  background: linear-gradient(135deg, #2b2b2b 0%, #151515 100%);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  padding: 2px 6px;
-  border-radius: 4px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-  line-height: 1.2;
-}
-
 /* Sizes */
-.streamify-premium-logo.small .play-svg {
+.streamify-logo.small .play-svg {
   width: 28px;
   height: 20px;
 }
 
-.streamify-premium-logo.small .brand-title {
-  font-size: 17px;
+.streamify-logo.small .brand-title {
+  font-size: 18px;
 }
 
-.streamify-premium-logo.small .premium-tag {
-  font-size: 8px;
-  padding: 1px 5px;
-}
-
-.streamify-premium-logo.large {
+.streamify-logo.large {
   gap: 14px;
 }
 
-.streamify-premium-logo.large .play-svg {
+.streamify-logo.large .play-svg {
   width: 46px;
   height: 33px;
 }
 
-.streamify-premium-logo.large .brand-title {
+.streamify-logo.large .brand-title {
   font-size: 28px;
   letter-spacing: -0.8px;
-}
-
-.streamify-premium-logo.large .premium-tag {
-  font-size: 11px;
-  padding: 3px 8px;
-  border-radius: 5px;
 }

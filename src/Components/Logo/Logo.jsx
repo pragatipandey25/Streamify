@@ -2,7 +2,7 @@ import "./Logo.css";
 
 const Logo = ({ size = "medium", className = "" }) => {
   return (
-    <div className={`streamify-premium-logo ${size} ${className}`} aria-label="Streamify Premium Logo">
+    <div className={`streamify-logo ${size} ${className}`} aria-label="Streamify Logo">
       <div className="logo-badge">
         <svg viewBox="0 0 36 26" fill="none" xmlns="http://www.w3.org/2000/svg" className="play-svg">
           <defs>
@@ -22,7 +22,6 @@ const Logo = ({ size = "medium", className = "" }) => {
 
       <div className="logo-text-group">
         <span className="brand-title">Streamify</span>
-        <span className="premium-tag">PREMIUM</span>
       </div>
     </div>
   );
